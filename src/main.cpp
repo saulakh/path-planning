@@ -7,6 +7,9 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
+#include "spline.h"
+
+using namespace std;
 
 // for convenience
 using nlohmann::json;
@@ -49,6 +52,12 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
+  
+  // Add lane value
+  //int lane = 1;
+  
+  // Add target velocity
+  //double target_vel = 49.5; // in mph
 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
@@ -87,6 +96,45 @@ int main() {
           // Sensor Fusion Data, a list of all other cars on the same side 
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
+          
+          // Add lane value
+          int lane = 1;
+          
+          // Add target velocity
+          double target_vel = 49.5; // in mph
+          
+          // Add size of previous path
+          int prev_size = previous_path_x.size(); 
+          
+          // Use sensor fusion data to check for other cars
+          // The data format for each car is: [id, x, y, vx, vy, s, d]
+          
+          // Initialize checks
+          bool car_ahead = false;
+          bool move_left = false;
+          bool move_right = false;
+          
+          // Check for other cars nearby
+          for (int i = 0; i < sensor_fusion.size(); i++) {
+            float d = sensor_fusion[i][6];
+
+            if (d > (4 * lane) && (d < 4 * (lane+1))) {
+              double vx = sensor_fusion[i][3];
+              double vy = sensor_fusion[i][4];
+              double check_car_s = sensor_fusion[i][5];
+              double check_car_speed = sqrt(vx*vx + vy*vy);
+              // Check where car will be at the end of the path
+              check_car_s += prev_size * 0.02 * check_car_speed;
+
+              // Check if car ahead is driving slower and within 30 m
+              if ((check_car_speed < car_speed) && (check_car_s > car_s) && (check_car_s - car_s < 30)) {
+                car_ahead = true;
+                target_vel = vx - 5;
+                cout << "Car ahead, slow down to: " << target_vel << endl;
+              }
+            }
+
+          }
 
           json msgJson;
 
@@ -97,8 +145,21 @@ int main() {
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
-
-
+          
+          // Generate path of next x and y values
+          
+          // Drive in middle lane
+          double dist_inc = 0.02 * target_vel / 2.24;
+          for (int i = 0; i < 50; ++i) {  
+            double next_s = car_s + (i + 1) * dist_inc;
+            double next_d = 2 + 4 * lane;
+            vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            next_x_vals.push_back(xy[0]);  
+            next_y_vals.push_back(xy[1]);
+          }
+          
+          // End of path planning
+          
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
