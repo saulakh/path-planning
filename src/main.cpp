@@ -57,7 +57,7 @@ int main() {
   int lane = 1;
   
   // Add target velocity
-  double target_vel = 49.5; // in mph
+  double target_vel = 0.0; // in mph
 
   h.onMessage([&lane,&target_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
@@ -97,6 +97,17 @@ int main() {
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
           
+          json msgJson;
+
+          // Define list of x and y points for path planner
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          /**
+           * TODO: define a path made up of (x,y) points that the car will visit
+           *   sequentially every .02 seconds
+           */
+          
           // Add size of previous path
           int prev_size = previous_path_x.size(); 
           
@@ -127,8 +138,8 @@ int main() {
             // Check if car is in the same lane
             if (d > (4 * lane) && (d < 4 * (lane+1))) {
               
-              // Check if car ahead is within 30 m
-              if ((check_car_s > car_s) && (check_car_s - car_s < 30)) {
+              // Check if car ahead is within 25 m
+              if ((check_car_s > car_s) && (check_car_s - car_s < 25)) {
                 car_ahead = true;
                 cout << "Car ahead" << endl;
               }
@@ -158,12 +169,17 @@ int main() {
               }
             }
             
-            cout << "Car ahead: " << car_ahead << endl;
-            cout << "Car left: " << car_left << endl;
-            cout << "Car right: " << car_right << endl;       
+            if (car_ahead == false && car_left == false && car_right == false) {
+              cout << "Road clear" << endl;
+            }
+                  
           }
           
           // Behavior planning
+          
+          // Max acceleration is 10 m/s^2, or changing velocity by 22.4 mph/s
+          // Each timestep is 0.02 s, so max velocity change is 22.4 mph/s * 0.02 s
+          // Max velocity change is 0.448 mph (for acceleration of 10 m/s^2) 
           
           // Set max speed and acceleration values
           double max_speed = 49.5; // mph
@@ -189,17 +205,6 @@ int main() {
             target_vel += max_acc;
             cout << "Speeding up to target velocity" << endl;
           }
-
-          json msgJson;
-
-          // Define list of x and y points for path planner
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          /**
-           * TODO: define a path made up of (x,y) points that the car will visit
-           *   sequentially every .02 seconds
-           */
           
           // Spline path planner from Project Q&A video
           
