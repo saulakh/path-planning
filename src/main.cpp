@@ -123,7 +123,16 @@ int main() {
           bool car_ahead = false;
           bool car_left = false;
           bool car_right = false;
-          double car_ahead_speed;
+          
+          // Initialize variables
+          double car_ahead_speed = 50;
+          double car_left_speed = 50;
+          double car_right_speed = 50;
+          
+          int check_car_lane = 5;
+          
+          // Target velocity in mph, other values are m or m/s
+          // Target velocity is converted later in path planning section
           
           // Check for other cars nearby
           for (int i = 0; i < sensor_fusion.size(); i++) {
@@ -136,8 +145,19 @@ int main() {
             // Check where car will be at a later timestep
             check_car_s += (double)prev_size * 0.02 * check_car_speed;
             
+            // Check which lane the other car is in
+            if (d > 0 && d < 4) {
+              check_car_lane = 0;
+            }
+            else if (d > 4 && d < 8) {
+              check_car_lane = 1;
+            }
+            else if (d > 8 && d < 12) {
+              check_car_lane = 2;
+            }
+            
             // Check if car is in the same lane
-            if (d > (4 * lane) && (d < 4 * (lane+1))) {
+            if (check_car_lane == lane) {
               
               // Check if car ahead is within 25 m
               if ((check_car_s > car_s) && (check_car_s - car_s < 25)) {
@@ -148,28 +168,28 @@ int main() {
               }
             }
             
-            // Check if car is in middle or right lane
-            if (lane == 1 || lane == 2) {
-              // Check if left lane is clear
-              if (d > 4 * (lane-1) && d < 4 * lane) {
-                // Check for enough space to change lanes
-                if (fabs(car_s - check_car_s) < 20) {
-                  car_left = true; // false when lane is clear
-                }
-              }
+            // Check if left lane is clear
+            if ((check_car_lane + 1 == lane) && (fabs(car_s - check_car_s) < 20)) {
+              car_left = true; // false when lane is clear
+              car_left_speed = 2.24 * check_car_speed; // convert m/s to mph
+              cout << "Left car in lane: " << check_car_lane << endl;
+              cout << "Car s: " << car_s << endl;
+              cout << "Left car s: " << check_car_s << endl;
+              cout << "Car speed: " << car_speed << endl;
+              cout << "Left car speed: " << car_left_speed << endl;
             }
             
-            // Check if car is in left or middle lane
-            if (lane == 0 || lane == 1) {
-              // Check if right lane is clear
-              if (d > 4 * (lane+1) && d < 4 * (lane+2)) {
-                // Check for enough space to change lanes
-                if (fabs(car_s - check_car_s) < 20) {
-                  car_right = true; // false when lane is clear
-                }
-              }
+            // Check if right lane is clear
+            if ((check_car_lane - 1 == lane) && (fabs(car_s - check_car_s) < 20)) {
+              car_right = true; // false when lane is clear
+              car_right_speed = 2.24 * check_car_speed; // convert m/s to mph
+              cout << "Right car in lane: " << check_car_lane << endl;
+              cout << "Car s: " << car_s << endl;
+              cout << "Right car s: " << check_car_s << endl;
+              cout << "Car speed: " << car_speed << endl;
+              cout << "Right car speed: " << car_right_speed << endl;
             }
-                  
+            
           }
           
           // Behavior planning
@@ -183,13 +203,15 @@ int main() {
           double max_acc = 0.224; // approximately 5 m/s^2
           
           // Slow down if car ahead is too close
-          if (car_ahead == true && target_vel > car_ahead_speed * 0.90) { // buffer speed
-            target_vel -= max_acc;
-            cout << "Car ahead, slowing down" << endl;
+          if (car_ahead == true) {
+            if (target_vel > car_ahead_speed * 0.85) { // buffer speed
+              target_vel -= max_acc;
+              cout << "Car ahead, slowing down" << endl;
+            }
             // If left lane is clear, move left
             if (car_left == false && lane > 0) {
               lane--;
-              cout << "Left lane clear, moving left" << endl; 
+              cout << "Left lane clear, moving left" << endl;
             }
             // Otherwise, move right if right lane is clear
             else if (car_right == false && lane < 2) {
@@ -200,7 +222,7 @@ int main() {
           // If there is no car ahead, speed up to target velocity
           else if (target_vel < max_speed) {
             target_vel += max_acc;
-            cout << "Speeding up to target velocity" << endl;
+            cout << "Lane clear, speeding up" << endl;
           }
           
           // Spline path planner from Project Q&A video
@@ -268,7 +290,7 @@ int main() {
             double shift_x = pts_x[i] - ref_x;
             double shift_y = pts_y[i] - ref_y;
             
-            // Translating and rotating waypoints to origin of the car's coordinate system
+            // Translate and rotate waypoints to origin of the car's coordinate system
             pts_x[i] = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
             pts_y[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
           }
@@ -294,7 +316,7 @@ int main() {
           
           // Fill up the remaining points for path planning list
           for (int i = 1; i <= 50-previous_path_x.size(); i++) {
-            double N = target_dist / (0.02 * target_vel / 2.24);
+            double N = target_dist / (0.02 * target_vel / 2.24); // velocity converted to m/s
             double x_point = x_add_on + target_x / N;
             double y_point = s(x_point);
             
