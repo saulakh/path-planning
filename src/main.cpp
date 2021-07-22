@@ -120,6 +120,7 @@ int main() {
           // The data format for each car is: [id, x, y, vx, vy, s, d]
           
           // Initialize checks
+          bool too_close = false;
           bool car_ahead = false;
           bool car_left = false;
           bool car_right = false;
@@ -158,6 +159,12 @@ int main() {
             
             // Check if car is in the same lane
             if (check_car_lane == lane) {
+              
+              // Check if car ahead is within 15 m
+              if ((check_car_s > car_s) && (check_car_s - car_s < 15)) {
+                too_close = true;
+                cout << "Car ahead is too close" << endl;
+              }
               
               // Check if car ahead is within 25 m
               if ((check_car_s > car_s) && (check_car_s - car_s < 25)) {
@@ -204,7 +211,12 @@ int main() {
           
           // Slow down if car ahead is too close
           if (car_ahead == true) {
-            if (target_vel > car_ahead_speed * 0.85) { // buffer speed
+            if (too_close == true) {
+              target_vel -= 0.3; // Still below 10 m/s^2
+              cout << "Car too close, slowing down" << endl; 
+            }
+            // Otherwise drive slightly slower than car ahead
+            else if (target_vel > car_ahead_speed * 0.9) { // buffer speed
               target_vel -= max_acc;
               cout << "Car ahead, slowing down" << endl;
             }
