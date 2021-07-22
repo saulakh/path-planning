@@ -123,6 +123,7 @@ int main() {
           bool car_ahead = false;
           bool car_left = false;
           bool car_right = false;
+          double car_ahead_speed;
           
           // Check for other cars nearby
           for (int i = 0; i < sensor_fusion.size(); i++) {
@@ -141,7 +142,9 @@ int main() {
               // Check if car ahead is within 25 m
               if ((check_car_s > car_s) && (check_car_s - car_s < 25)) {
                 car_ahead = true;
-                cout << "Car ahead" << endl;
+                car_ahead_speed = 2.24 * check_car_speed; // convert m/s to mph
+                cout << "Car speed: " << car_speed << endl;
+                cout << "Car ahead speed: " << car_ahead_speed << endl;
               }
             }
             
@@ -152,7 +155,6 @@ int main() {
                 // Check for enough space to change lanes
                 if (fabs(car_s - check_car_s) < 20) {
                   car_left = true; // false when lane is clear
-                  cout << "Car in the left lane" << endl;
                 }
               }
             }
@@ -164,13 +166,8 @@ int main() {
                 // Check for enough space to change lanes
                 if (fabs(car_s - check_car_s) < 20) {
                   car_right = true; // false when lane is clear
-                  cout << "Car in the right lane" << endl;
                 }
               }
-            }
-            
-            if (car_ahead == false && car_left == false && car_right == false) {
-              cout << "Road clear" << endl;
             }
                   
           }
@@ -186,7 +183,7 @@ int main() {
           double max_acc = 0.224; // approximately 5 m/s^2
           
           // Slow down if car ahead is too close
-          if (car_ahead == true) {
+          if (car_ahead == true && target_vel > car_ahead_speed * 0.90) { // buffer speed
             target_vel -= max_acc;
             cout << "Car ahead, slowing down" << endl;
             // If left lane is clear, move left
