@@ -43,7 +43,7 @@ The _helpers.h_ header file is located in the ```src ``` folder, and contains se
 
 ### Project Code
 
-The project file is _main.cpp_, located in the ```src ``` folder. The three main sections are perception, behavior planning, and path planning.
+The project file is [main.cpp](https://github.com/saulakh/path-planning/blob/main/src/main.cpp), located in the ```src ``` folder. The three main sections are perception, behavior planning, and path planning.
 
 ##### Perception
 
@@ -144,7 +144,7 @@ I started off playing around with the code and focusing on understanding the pro
 
 After resolving these issues, the car was able to drive over 10 miles without an incident several times, which was enough for this project. 
 
-I continued running the simulation, and found a few other areas for improvement. Occasionally, the ego vehicle starts to change lanes when the car ahead slows down, so the ego car comes back to its original lane. In this situation, sometimes the car swerves or attempts double lane changes, and exceed the 3 second outside of lane limit. To resolve this issue, I could add a flag for the car to wait a few seconds before attempting another lane change. 
+I continued running the simulation, and found a few other areas for improvement. Occasionally, the ego vehicle starts to change lanes when the car ahead slows down, so the ego car comes back to its original lane. In this situation, sometimes the car swerves or attempts double lane changes, and triggers the 3 second outside of lane warning. To resolve this issue, I could add a flag for the car to wait a few seconds before attempting another lane change. 
 
 ![image](https://user-images.githubusercontent.com/74683142/126872767-0156db76-2eca-43a5-ba87-ce12821fa434.png)
 
